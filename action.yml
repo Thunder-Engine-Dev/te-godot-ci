@@ -1,0 +1,9 @@
+name: godot-ci
+description: Docker image to export Thunder Engine games on Godot 4. Templates for GitHub Actions
+author: jue13
+branding:
+  color: gray-dark
+  icon: git-merge
+runs: 
+  using: 'docker'
+  image: 'docker://jue13/godot-ci'
