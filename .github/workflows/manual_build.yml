@@ -11,6 +11,11 @@ on:
         type: string
         default: "stable"
         required: true
+      platform:
+        description: 'Custom build: "linuxbsd". Official build: "linux.x86_64"'
+        type: string
+        default: "linuxbsd"
+        required: true
       set_latest:
         description: 'Tag as latest'
         type: boolean
@@ -78,5 +83,5 @@ jobs:
             RELEASE_NAME=${{ github.event.inputs.release_name }}
             SUBDIR=${{  github.event.inputs.release_name != 'stable' && format('/{0}', github.event.inputs.release_name) || '' }}
             GODOT_TEST_ARGS=${{ startsWith( github.event.inputs.version, '3.' ) && '' || '--headless --quit' }}
-            GODOT_PLATFORM=${{ startsWith( github.event.inputs.version, '3.' ) && 'linux_headless.64' || 'linux.x86_64' }}
+            GODOT_PLATFORM=${{ github.event.inputs.platform }}
             
