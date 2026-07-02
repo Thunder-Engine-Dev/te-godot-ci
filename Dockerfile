@@ -37,10 +37,12 @@ RUN wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODO
     && mkdir -p ~/.config/godot \
     && mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
     && unzip godot.${GODOT_PLATFORM}.editor.x86_64.zip \
+    && chmod +x godot.${GODOT_PLATFORM}.editor.x86_64 \
     && mv godot.${GODOT_PLATFORM}.editor.x86_64 /usr/local/bin/godot \
     && unzip godot.${GODOT_PLATFORM}.template_release.x86_64.zip \
     && unzip godot.windows.template_release.x86_64.zip \
     && mv godot.windows.template_release.x86_64.exe ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
+    && chmod +x godot.${GODOT_PLATFORM}.template_release.x86_64 \
     && mv godot.${GODOT_PLATFORM}.template_release.x86_64 ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
     && rm -f godot.${GODOT_PLATFORM}.template_release.x86_64.zip godot.windows.template_release.x86_64.zip godot.${GODOT_PLATFORM}.editor.x86_64.zip \
     && cd ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME}
