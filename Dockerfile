@@ -20,7 +20,7 @@ ARG GODOT_VERSION="4.7.1"
 
 # Example values: stable, beta3, rc1, dev2, etc.
 # Also change the `SUBDIR` argument below when NOT using stable.
-ARG RELEASE_NAME="rc"
+ARG RELEASE_NAME="stable"
 
 # This is only needed for non-stable builds (alpha, beta, RC)
 # e.g. SUBDIR "/beta3"
@@ -28,23 +28,21 @@ ARG RELEASE_NAME="rc"
 ARG SUBDIR=""
 
 ARG GODOT_TEST_ARGS=""
-ARG GODOT_PLATFORM="linuxbsd"
+ARG GODOT_PLATFORM="linux"
 
-RUN wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/godot.${GODOT_PLATFORM}.editor.x86_64.zip \
-    && wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/godot.${GODOT_PLATFORM}.template_release.x86_64.zip \
-    && wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/godot.windows.template_release.x86_64.zip \
+RUN wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64.zip \
+    && wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_export_templates.zip \
     && mkdir -p ~/.cache \
     && mkdir -p ~/.config/godot \
     && mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
-    && unzip godot.${GODOT_PLATFORM}.editor.x86_64.zip \
-    && chmod +x godot.${GODOT_PLATFORM}.editor.x86_64 \
-    && mv godot.${GODOT_PLATFORM}.editor.x86_64 /usr/local/bin/godot \
-    && unzip godot.${GODOT_PLATFORM}.template_release.x86_64.zip \
-    && unzip godot.windows.template_release.x86_64.zip \
-    && mv windows_release_x86_64.exe ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME}/windows_release_x86_64.exe \
-    && chmod +x linux_release.x86_64 \
-    && mv linux_release.x86_64 ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME}/linux_release.x86_64 \
-    && rm -f godot.${GODOT_PLATFORM}.template_release.x86_64.zip godot.windows.template_release.x86_64.zip godot.${GODOT_PLATFORM}.editor.x86_64.zip
+    && unzip Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64.zip \
+    && mv Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64 /usr/local/bin/godot \
+    && unzip Godot_v${GODOT_VERSION}-${RELEASE_NAME}_export_templates.zip \
+    && chmod +x templates/linux_release.x86_64 \
+    && rm -rf templates/linux_debug.x86_64 \
+    && rm -rf templates/windows_debug_*.* \
+    && mv templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
+    && rm -f Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64.zip Godot_v${GODOT_VERSION}-${RELEASE_NAME}_export_templates.zip
 
 
 RUN godot -v -e --quit --headless ${GODOT_TEST_ARGS}
