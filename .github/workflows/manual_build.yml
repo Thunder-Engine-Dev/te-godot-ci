@@ -12,9 +12,9 @@ on:
         default: "stable"
         required: true
       platform:
-        description: 'Custom build: "linuxbsd". Official build: "linux.x86_64"'
+        description: ''
         type: string
-        default: "linuxbsd"
+        default: "linux"
         required: true
       set_latest:
         description: 'Tag as latest'
