@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rsync \
     && rm -rf /var/lib/apt/lists/*
 
-# When in doubt, see the downloads page: https://github.com/godotengine/godot-builds/releases/
-ARG GODOT_VERSION="4.7.1"
+# Releases are built from patches in https://github.com/Thunder-Engine-Dev/godot-thunder/releases (tag = ${GODOT_VERSION}-${RELEASE_NAME})
+ARG GODOT_VERSION="4.7.3"
 
 # Example values: stable, beta3, rc1, dev2, etc.
 # Also change the `SUBDIR` argument below when NOT using stable.
-ARG RELEASE_NAME="stable"
+ARG RELEASE_NAME="rc2"
 
 # This is only needed for non-stable builds (alpha, beta, RC)
 # e.g. SUBDIR "/beta3"
@@ -30,8 +30,8 @@ ARG SUBDIR=""
 ARG GODOT_TEST_ARGS=""
 ARG GODOT_PLATFORM="linux"
 
-RUN wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64.zip \
-    && wget https://github.com/Thunder-Engine-Dev/godot-te/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_export_templates.zip \
+RUN wget https://github.com/Thunder-Engine-Dev/godot-thunder/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_${GODOT_PLATFORM}.x86_64.zip \
+    && wget https://github.com/Thunder-Engine-Dev/godot-thunder/releases/download/${GODOT_VERSION}-${RELEASE_NAME}/Godot_v${GODOT_VERSION}-${RELEASE_NAME}_export_templates.zip \
     && mkdir -p ~/.cache \
     && mkdir -p ~/.config/godot \
     && mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${RELEASE_NAME} \
