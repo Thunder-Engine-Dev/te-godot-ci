@@ -20,7 +20,7 @@ ARG GODOT_VERSION="4.7.3"
 
 # Example values: stable, beta3, rc1, dev2, etc.
 # Also change the `SUBDIR` argument below when NOT using stable.
-ARG RELEASE_NAME="rc2"
+ARG RELEASE_NAME="rc3"
 
 # This is only needed for non-stable builds (alpha, beta, RC)
 # e.g. SUBDIR "/beta3"

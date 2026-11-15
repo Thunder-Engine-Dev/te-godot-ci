@@ -1,77 +1,102 @@
 name: "godot-ci export"
-on: push
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      debug_mode:
+        description: "Include debug script and debug launchers"
+        type: boolean
+        default: true
 
 # NOTE: If your `project.godot` is at the repository root, set `PROJECT_PATH` below to ".".
 
 env:
-  GODOT_VERSION: 4.4.1
+  GODOT_VERSION: 4.7.3.rc3
   EXPORT_NAME: test-project
   PROJECT_PATH: test-project
+  # Enabled by default (push); can be turned off on manual run
+  DEBUG_MODE: ${{ github.event.inputs.debug_mode || 'true' }}
 
 jobs:
-  export-windows:
-    name: Windows Export
-    runs-on: ubuntu-24.04  # Using 24.04 due to libgdmpt extension (for audio playback) failing on 22.04
+  export:
+    name: ${{ matrix.name }} Export
+    runs-on: ubuntu-24.04 # Using 24.04 due to libgdmpt extension (for audio playback) failing on 22.04
     container:
-      image: jue13/godot-ci:4.4.1
+      image: jue13/godot-ci:4.7.3.rc3
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            dir: windows
+            preset: Windows Desktop
+            ext: .exe
+            version_tag: interim-win64
+          - name: Linux
+            dir: linux
+            preset: Linux/X11
+            ext: .x86_64
+            version_tag: interim-linux
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Set WINEPREFIX
-        run: echo WINEPREFIX=/root/.wine >> "$GITHUB_ENV"
       - name: Setup
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mkdir -v -p ~/.config/
           mv /root/.config/godot ~/.config/godot
-          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mv /root/.local/share/godot/export_templates/${GODOT_VERSION} ~/.local/share/godot/export_templates/${GODOT_VERSION}
+          echo EXPORT_DIR="$(readlink -f build)" >> $GITHUB_ENV
       - name: Project Import
         run: |
           cd $PROJECT_PATH
-          godot --headless --verbose --import
-      - name: Windows Build
+          godot --headless --import
+      - name: Prepare Project
         run: |
-          mkdir -v -p build/windows
-          EXPORT_DIR="$(readlink -f build)"
+          mkdir -v -p "${{ env.EXPORT_DIR }}/${{ matrix.dir }}"
+      - name: Enable Debug
+        if: env.DEBUG_MODE == 'true'
+        run: |
           cd $PROJECT_PATH
-          echo "nightly-win64\n${{ github.sha }}" > stages/main_menu/version-text.txt
-          godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/windows/$EXPORT_NAME.exe"
+          mkdir -p engine/singletones/nodes/debug stages/main_menu
+          echo "${{ matrix.version_tag }}\n${{ github.sha }}" > stages/main_menu/version-text.txt
+          printf "extends RefCounted\n\nconst DEBUG_ENABLED = true\n" > engine/singletones/nodes/debug/enable_debug.gd
+      - name: Windows Launchers
+        if: matrix.dir == 'windows'
+        run: |
+          cd "${{ env.EXPORT_DIR }}/windows"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver vulkan' > "01. Vulkan.bat"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3' > "02. Compatibility Mode.bat"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3_angle' > "03. Compatibility Mode (angle).bat"
+      - name: Windows Debug Launchers
+        if: matrix.dir == 'windows' && env.DEBUG_MODE == 'true'
+        run: |
+          cd "${{ env.EXPORT_DIR }}/windows"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver vulkan -- --developer-commands' > "04. Debug Mode, Vulkan.bat"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" -- --developer-commands' > "05. Debug Mode.bat"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3 -- --developer-commands' > "06. Debug, Compatibility Mode.bat"
+          echo 'start "" ".\${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3_angle -- --developer-commands' > "07. Debug, Compatibility Mode (angle).bat"
+      - name: Linux Launchers
+        if: matrix.dir == 'linux'
+        run: |
+          cd "${{ env.EXPORT_DIR }}/linux"
+          printf '#!/bin/bash\n\n"./${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3\n' > "Compatibility Mode.sh"
+          chmod +x "Compatibility Mode.sh"
+      - name: Linux Debug Launchers
+        if: matrix.dir == 'linux' && env.DEBUG_MODE == 'true'
+        run: |
+          cd "${{ env.EXPORT_DIR }}/linux"
+          printf '#!/bin/bash\n\n"./${{ env.EXPORT_NAME }}${{ matrix.ext }}" -- --developer-commands\n' > "Debug Mode.sh"
+          printf '#!/bin/bash\n\n"./${{ env.EXPORT_NAME }}${{ matrix.ext }}" --rendering-driver opengl3 -- --developer-commands\n' > "Debug, Compatibility Mode.sh"
+          chmod +x "Debug Mode.sh" "Debug, Compatibility Mode.sh"
+      - name: Build
+        run: |
+          cd $PROJECT_PATH
+          godot --headless --export-release "${{ matrix.preset }}" "${{ env.EXPORT_DIR }}/${{ matrix.dir }}/${{ env.EXPORT_NAME }}${{ matrix.ext }}"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: build/windows
-
-  export-linux:
-    name: Linux Export
-    runs-on: ubuntu-24.04
-    container:
-      image: jue13/godot-ci:4.4.1
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-          submodules: recursive
-      - name: Setup
-        run: |
-          mkdir -v -p ~/.local/share/godot/export_templates/
-          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Project Import
-        run: |
-          cd $PROJECT_PATH
-          godot --headless --verbose --import
-      - name: Linux Build
-        run: |
-          mkdir -v -p build/linux
-          EXPORT_DIR="$(readlink -f build)"
-          cd $PROJECT_PATH
-          echo "nightly-linux\n${{ github.sha }}" > stages/main_menu/version-text.txt
-          godot --headless --verbose --export-release "Linux/X11" "$EXPORT_DIR/linux/$EXPORT_NAME.x86_64"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux
-          path: build/linux
+          name: ${{ matrix.dir }}
+          path: build/${{ matrix.dir }}
